@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User List</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .user-card {
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 15px;
+            margin-bottom: 15px;
+            background-color: #fafafa;
+            transition: transform 0.2s;
+        }
+        
+        .user-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .user-name {
+            font-size: 18px;
+            font-weight: bold;
+            color: #2c3e50;
+            margin-bottom: 5px;
+        }
+        
+        .user-email {
+            color: #7f8c8d;
+            margin-bottom: 5px;
+        }
+        
+        .user-age {
+            color: #95a5a6;
+            font-size: 14px;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: #666;
+        }
+        
+        .error {
+            text-align: center;
+            padding: 20px;
+            color: #e74c3c;
+            background-color: #fdf2f2;
+            border-radius: 6px;
+            margin-bottom: 20px;
+        }
+        
+        .refresh-btn {
+            display: block;
+            margin: 20px auto;
+            padding: 10px 20px;
+            background-color: #3498db;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+        }
+        
+        .refresh-btn:hover {
+            background-color: #2980b9;
+        }
+        
+        .user-count {
+            text-align: center;
+            margin-bottom: 20px;
+            color: #666;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>User Directory</h1>
+        <button class="refresh-btn" onclick="loadUsers()">Refresh Users</button>
+        <div id="userCount" class="user-count"></div>
+        <div id="userList">
+            <div class="loading">Loading users...</div>
+        </div>
+    </div>
+
+    <script>
+        // Function to fetch and display users
+        async function loadUsers() {
+            const userList = document.getElementById('userList');
+            const userCount = document.getElementById('userCount');
+            
+            // Show loading state
+            userList.innerHTML = '<div class="loading">Loading users...</div>';
+            userCount.innerHTML = '';
+            
+            try {
+                // Use relative path for API calls (works both locally and on Vercel)
+                const response = await fetch('/api/users');
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const result = await response.json();
+                
+                if (result.success && result.data) {
+                    displayUsers(result.data);
+                    userCount.innerHTML = `Total Users: ${result.count}`;
+                } else {
+                    throw new Error('Invalid response format');
+                }
+                
+            } catch (error) {
+                console.error('Error fetching users:', error);
+                userList.innerHTML = `
+                    <div class="error">
+                        Error loading users: ${error.message}
+                        <br><br>
+                        Please check your internet connection or try again later.
+                    </div>
+                `;
+            }
+        }
+        
+        // Function to display users in the UI
+        function displayUsers(users) {
+            const userList = document.getElementById('userList');
+            
+            if (users.length === 0) {
+                userList.innerHTML = '<div class="loading">No users found.</div>';
+                return;
+            }
+            
+            const userHTML = users.map(user => `
+                <div class="user-card">
+                    <div class="user-name">${escapeHtml(user.name)}</div>
+                    <div class="user-email">📧 ${escapeHtml(user.email)}</div>
+                    <div class="user-age">🎂 Age: ${user.age}</div>
+                </div>
+            `).join('');
+            
+            userList.innerHTML = userHTML;
+        }
+        
+        // Function to escape HTML to prevent XSS
+        function escapeHtml(text) {
+            const div = document.createElement('div');
+            div.textContent = text;
+            return div.innerHTML;
+        }
+        
+        // Load users when page loads
+        document.addEventListener('DOMContentLoaded', loadUsers);
+    </script>
+</body>
+</html>
